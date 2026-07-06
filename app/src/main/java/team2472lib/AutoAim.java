@@ -4,18 +4,29 @@
 package team2472lib;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class AutoAim {
-    Pose2d target;
+    AutoPose2d target;
     double deltaHight;
-    public AutoAim(Pose2d target, double deltaHight) {
+
+    public AutoAim() {}
+
+    public AutoAim(AutoPose2d target, double deltaHight) {
         this.target = target;
         this.deltaHight = deltaHight;
     }
-    public double getTargetYaw(Pose2d currentPose) {
+
+    public double getTargetYaw(Pose2d currentPose, AutoPose2d target, double deltaHight) {
+        this.target = target;
+        this.deltaHight = deltaHight;
         Pose2d translation = currentPose.relativeTo(target);
         double angle = Math.atan2(translation.getY(), translation.getX());
         return angle;
     }
+
+    public double getTargetYaw(Pose2d currentPose) {
+        return getTargetYaw(currentPose, target, deltaHight);
+    }
+
+
 }
