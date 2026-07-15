@@ -1,21 +1,20 @@
 package team2472lib;
 
-import static frc.robot.Constants.DriveConstants.*;
-import static frc.robot.extras.SwerveAutoUtils.directionFromPoseAndTarget;
-import static frc.robot.extras.SwerveAutoUtils.getMagnitude;
+//import static frc.robot.Constants.DriveConstants.*;
+//import static frc.robot.extras.SwerveAutoUtils.directionFromPoseAndTarget;
+//import static frc.robot.extras.SwerveAutoUtils.getMagnitude;
 
 import com.ctre.phoenix6.swerve.SwerveModule;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
-
-import frc.robot.extras.SwerveAutoUtils;
-import frc.robot.subsystems.CommandSwerveDrivetrain;
+import edu.wpi.first.math.filter.SlewRateLimiter;
+//import frc.robot.extras.SwerveAutoUtils;
+//import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 public class SwerveDriveToPointCommand extends Command {
 
@@ -32,11 +31,12 @@ public class SwerveDriveToPointCommand extends Command {
     private Rotation2d startingRotation;
     private double progress;
     private double totalDistance;
-    private final Pose2d finalPosition;
+    private final Pose2d finalPosition, botPose;
     private final Timer timer;
 
-    public SwerveDriveToPointCommand(CommandSwerveDrivetrain drivetrain, Pose2d finalPosition) {
+    public SwerveDriveToPointCommand(CommandSwerveDrivetrain drivetrain, Pose2d botPose, Pose2d finalPosition) {
         this.drivetrain = drivetrain;
+        this.botPose = botPose;
         this.finalPosition = finalPosition; // targetPosition is not field pose
         // but needs mirroring
 
@@ -55,22 +55,25 @@ public class SwerveDriveToPointCommand extends Command {
 
     @Override
     public void initialize() {
-        Pose2d botPose = drivetrain.getState().Pose;
+        //Pose2d botPose = drivetrain.getState().Pose;
         startingRotation = botPose.getRotation();
         progress = 0.0;
-        totalDistance = SwerveAutoUtils.getDistance(botPose, finalPosition); // this does get distance
+        //totalDistance = SwerveAutoUtils.getDistance(botPose, finalPosition); // this does get distance
+        Pose2d translation = botPose.relativeTo(finalPosition);
+        totalDistance = Math.hypot(translation.getX(), translation.getY());
+        
         timer.restart();
     }
 
     @Override
     public void execute() {
-        Pose2d botPose = drivetrain.getState().Pose;
-
-        double currentDistance = SwerveAutoUtils.getDistance(botPose, finalPosition);
+        //Pose2d botPose = drivetrain.getState().Pose;
+        Pose2d translation = botPose.relativeTo(finalPosition);
+        double currentDistance = Math.hypot(translation.getX(), translation.getY());
         progress = 1 - (currentDistance / totalDistance);
         Rotation2d targetRotation = startingRotation.interpolate(finalPosition.getRotation(), progress);
 
-        double[] direction = directionFromPoseAndTarget(botPose, finalPosition);
+        double[] direction = SwerveAutoUtils.directionFromPoseAndTarget(botPose, finalPosition);
 
         double movementPID = Math.abs(speedPowerController.calculate(0, direction[2]));
         movementPID = Math.min(movementPID, 1.0d);
@@ -86,8 +89,8 @@ public class SwerveDriveToPointCommand extends Command {
         // Limit Acceleration
         turningSpeed = turningDerivLimiter.calculate(turningSpeed);
 
-        Logger.recordOutput("Movement Speed", movementSpeed);
-        Logger.recordOutput("Turning Speed", turningSpeed);
+        //Logger.recordOutput("Movement Speed", movementSpeed);
+        //Logger.recordOutput("Turning Speed", turningSpeed);
 
         direction[0] *= movementSpeed;
         direction[1] *= movementSpeed;
@@ -107,13 +110,15 @@ public class SwerveDriveToPointCommand extends Command {
         // return true;
         // }
 
-        Pose2d botPose = drivetrain.getState().Pose;
+        //Pose2d botPose = drivetrain.getState().Pose;
 
-        double distance = getMagnitude(botPose.getX() - finalPosition.getX(), botPose.getY() - finalPosition.getY());
+        //double distance = getMagnitude(botPose.getX() - finalPosition.getX(), botPose.getY() - finalPosition.getY());
+        double distance = 
+
         double rotational_error = Math.abs(finalPosition.getRotation().minus(botPose.getRotation()).getDegrees());
 
-        Logger.recordOutput("Movement Distance", distance);
-        Logger.recordOutput("Turning Distance", rotational_error);
+        //Logger.recordOutput("Movement Distance", distance);
+        //Logger.recordOutput("Turning Distance", rotational_error);
 
         boolean isThere = distance < K_AUTO_TRANSLATION_TOLERANCE && rotational_error < K_AUTO_ROTATION_TOLERANCE;
 
