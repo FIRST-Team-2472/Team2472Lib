@@ -39,6 +39,7 @@ public class SwerveDriveToPointCommand extends Command {
         this.botPose = botPose;
         this.finalPosition = finalPosition; // targetPosition is not field pose
         // but needs mirroring
+        
 
         timer = new Timer();
 
@@ -59,8 +60,8 @@ public class SwerveDriveToPointCommand extends Command {
         startingRotation = botPose.getRotation();
         progress = 0.0;
         //totalDistance = SwerveAutoUtils.getDistance(botPose, finalPosition); // this does get distance
-        Pose2d translation = botPose.relativeTo(finalPosition);
-        totalDistance = Math.hypot(translation.getX(), translation.getY());
+        
+        totalDistance = Vector2D.fromPose(botPose, finalPosition).getMagnitude();
         
         timer.restart();
     }
@@ -68,14 +69,15 @@ public class SwerveDriveToPointCommand extends Command {
     @Override
     public void execute() {
         //Pose2d botPose = drivetrain.getState().Pose;
-        Pose2d translation = botPose.relativeTo(finalPosition);
-        double currentDistance = Math.hypot(translation.getX(), translation.getY());
+        double currentDistance = Vector2D.fromPose(botPose, finalPosition).getMagnitude();
         progress = 1 - (currentDistance / totalDistance);
         Rotation2d targetRotation = startingRotation.interpolate(finalPosition.getRotation(), progress);
 
-        double[] direction = SwerveAutoUtils.directionFromPoseAndTarget(botPose, finalPosition);
+        //double[] direction = SwerveAutoUtils.directionFromPoseAndTarget(botPose, finalPosition);
 
-        double movementPID = Math.abs(speedPowerController.calculate(0, direction[2]));
+        Vector2D direction = Vector2D.fromPose(botPose, finalPosition).normalize();
+
+        double movementPID = Math.abs(speedPowerController.calculate(0, direction.getMagnitude()));
         movementPID = Math.min(movementPID, 1.0d);
         double movementSpeed = movementPID * K_AUTO_SPEED;
 
@@ -92,10 +94,10 @@ public class SwerveDriveToPointCommand extends Command {
         //Logger.recordOutput("Movement Speed", movementSpeed);
         //Logger.recordOutput("Turning Speed", turningSpeed);
 
-        direction[0] *= movementSpeed;
-        direction[1] *= movementSpeed;
+        //direction[0] *= movementSpeed;
+        //direction[1] *= movementSpeed;
 
-        drivetrain.setControl(drive.withVelocityX(direction[0]).withVelocityY(direction[1]).withRotationalRate(turningSpeed));
+        drivetrain.setControl(drive.withVelocityX(direction.getX() * movementSpeed).withVelocityY(direction.getY() * movementSpeed).withRotationalRate(turningSpeed));
     }
 
     @Override
