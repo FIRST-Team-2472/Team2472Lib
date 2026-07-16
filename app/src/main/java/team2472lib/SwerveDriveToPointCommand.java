@@ -1,132 +1,154 @@
 package team2472lib;
 
-//import static frc.robot.Constants.DriveConstants.*;
-//import static frc.robot.extras.SwerveAutoUtils.directionFromPoseAndTarget;
-//import static frc.robot.extras.SwerveAutoUtils.getMagnitude;
-
 import com.ctre.phoenix6.swerve.SwerveModule;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.math.filter.SlewRateLimiter;
-//import frc.robot.extras.SwerveAutoUtils;
-//import frc.robot.subsystems.CommandSwerveDrivetrain;
+import edu.wpi.first.wpilibj2.command.Subsystem;
+
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
 
 public class SwerveDriveToPointCommand extends Command {
 
-    private final CommandSwerveDrivetrain drivetrain;
-    private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric().withDriveRequestType(SwerveModule.DriveRequestType.Velocity)
-            .withForwardPerspective(SwerveRequest.ForwardPerspectiveValue.BlueAlliance); // Don't automatically flip heading based on
-    // alliance
+    private final Supplier<Pose2d> poseSupplier;
+    private final Consumer<SwerveRequest> requestConsumer;
 
-    public PIDController speedPowerController;
-    public PIDController turningPowerController;
-    private SlewRateLimiter speedDerivLimiter = new SlewRateLimiter(0);
-    public SlewRateLimiter turningDerivLimiter = new SlewRateLimiter(0);
+    private final Pose2d targetPose;
+    private final double maxSpeed;
+    private final double maxRotation;
+    
+    private double distanceTolerance = 0.01;
+    private double rotationTolerance = .2;
+
+    private final PIDController translationPID;
+    private final PIDController rotationPID;
+    private final SlewRateLimiter speedLimiter;
+    private final SlewRateLimiter rotationLimiter;
+
+    private final SwerveRequest.FieldCentric driveRequest = new SwerveRequest.FieldCentric()
+            .withDriveRequestType(SwerveModule.DriveRequestType.Velocity)
+            .withForwardPerspective(SwerveRequest.ForwardPerspectiveValue.BlueAlliance);
 
     private Rotation2d startingRotation;
-    private double progress;
     private double totalDistance;
-    private final Pose2d finalPosition, botPose;
-    private final Timer timer;
 
-    public SwerveDriveToPointCommand(CommandSwerveDrivetrain drivetrain, Pose2d botPose, Pose2d finalPosition) {
-        this.drivetrain = drivetrain;
-        this.botPose = botPose;
-        this.finalPosition = finalPosition; // targetPosition is not field pose
-        // but needs mirroring
-        
+    private Timer timer;
+
+    public SwerveDriveToPointCommand(
+            Subsystem drivetrain,
+            Supplier<Pose2d> poseSupplier,
+            Consumer<SwerveRequest> requestConsumer,
+            Pose2d targetPose,
+            double maxSpeed,
+            double maxRotation) {
+
+        this.poseSupplier = poseSupplier;
+        this.requestConsumer = requestConsumer;
+        this.targetPose = targetPose;
+        this.maxSpeed = maxSpeed;
+        this.maxRotation = maxRotation;
 
         timer = new Timer();
 
         if (RobotBase.isSimulation()) {
-            speedPowerController = new PIDController(0.9, 0.0, 0.0);
-            turningPowerController = new PIDController(0.9, 0.0, 0.0);
+            translationPID = new PIDController(0.9, 0.0, 0.0);
+            rotationPID = new PIDController(0.9, 0.0, 0.0);
         } else {
-            speedPowerController = new PIDController(1.0, 0.0, 0.0);
-            turningPowerController = new PIDController(0.6, 0.0, 0.0);
+            translationPID = new PIDController(1.0, 0.0, 0.0);
+            rotationPID = new PIDController(0.6, 0.0, 0.0);
         }
+
+        this.speedLimiter = new SlewRateLimiter(6.0);
+        this.rotationLimiter = new SlewRateLimiter(8.0);
 
         addRequirements(drivetrain);
     }
 
+    public SwerveDriveToPointCommand(
+            Subsystem drivetrain,
+            Supplier<Pose2d> poseSupplier,
+            Consumer<SwerveRequest> requestConsumer,
+            Pose2d targetPose,
+            double maxSpeed,
+            double maxRotation, 
+            double distanceTolerance, 
+            double rotationTolerance) {
+
+        this(drivetrain, poseSupplier, requestConsumer, targetPose, maxSpeed, maxRotation);
+        setTolerance(distanceTolerance, rotationTolerance);
+    }
+
+    public void setTolerance(double distanceTolerance, double rotationTolerance) {
+        this.distanceTolerance = distanceTolerance;
+        this.rotationTolerance = rotationTolerance;
+    }
+
     @Override
     public void initialize() {
-        //Pose2d botPose = drivetrain.getState().Pose;
-        startingRotation = botPose.getRotation();
-        progress = 0.0;
-        //totalDistance = SwerveAutoUtils.getDistance(botPose, finalPosition); // this does get distance
-        
-        totalDistance = Vector2D.fromPose(botPose, finalPosition).getMagnitude();
+        Pose2d currentPose = poseSupplier.get();
+        startingRotation = currentPose.getRotation();
+    
+        totalDistance = Vector2D.fromPose(currentPose, targetPose).getMagnitude();
         
         timer.restart();
     }
 
     @Override
     public void execute() {
-        //Pose2d botPose = drivetrain.getState().Pose;
-        double currentDistance = Vector2D.fromPose(botPose, finalPosition).getMagnitude();
-        progress = 1 - (currentDistance / totalDistance);
-        Rotation2d targetRotation = startingRotation.interpolate(finalPosition.getRotation(), progress);
+        Pose2d currentPose = poseSupplier.get();
 
-        //double[] direction = SwerveAutoUtils.directionFromPoseAndTarget(botPose, finalPosition);
+        double currentDistance = Vector2D.fromPose(currentPose, targetPose).getMagnitude();
+        Vector2D direction = Vector2D.fromPose(currentPose, targetPose).normalize();
 
-        Vector2D direction = Vector2D.fromPose(botPose, finalPosition).normalize();
+        double progress = totalDistance > 0 ? 1.0 - (currentDistance / totalDistance) : 1.0;
+        progress = Math.max(0.0, Math.min(1.0, progress)); // Clamp progress between 0 and 1
+        Rotation2d targetHeading = startingRotation.interpolate(targetPose.getRotation(), progress);
 
-        double movementPID = Math.abs(speedPowerController.calculate(0, direction.getMagnitude()));
-        movementPID = Math.min(movementPID, 1.0d);
-        double movementSpeed = movementPID * K_AUTO_SPEED;
+        double translationOutput = translationPID.calculate(currentDistance, 0);
+        translationOutput = Math.min(Math.max(translationOutput, -1.0), 1.0); // Clamp to [-1, 1]
+        double requestedSpeed = translationOutput * maxSpeed;
+        double limitedSpeed = speedLimiter.calculate(requestedSpeed);
 
-        // Limit Acceleration
-        movementSpeed = speedDerivLimiter.calculate(movementSpeed);
+        double rotationOutput = rotationPID.calculate(targetHeading.minus(currentPose.getRotation()).getRadians(), 0);
+        rotationOutput = Math.min(Math.max(rotationOutput, -1.0), 1.0); // Clamp to [-1, 1]
+        double requestedRotation = rotationOutput * maxRotation;
+        double limitedRotation = rotationLimiter.calculate(requestedRotation);
 
-        double turningPID = turningPowerController.calculate(botPose.getRotation().minus(targetRotation).getRadians(), 0);
-        turningPID = Math.max(Math.min(turningPID, 1.0d), -1.0);
-        double turningSpeed = turningPID * K_MAX_ANGULAR_RATE;
-
-        // Limit Acceleration
-        turningSpeed = turningDerivLimiter.calculate(turningSpeed);
-
-        //Logger.recordOutput("Movement Speed", movementSpeed);
-        //Logger.recordOutput("Turning Speed", turningSpeed);
-
-        //direction[0] *= movementSpeed;
-        //direction[1] *= movementSpeed;
-
-        drivetrain.setControl(drive.withVelocityX(direction.getX() * movementSpeed).withVelocityY(direction.getY() * movementSpeed).withRotationalRate(turningSpeed));
+        requestConsumer.accept(driveRequest
+                .withVelocityX(direction.getX() * limitedSpeed)
+                .withVelocityY(direction.getY() * limitedSpeed)
+                .withRotationalRate(limitedRotation)
+        );
     }
 
     @Override
     public void end(boolean interrupted) {
+        requestConsumer.accept(driveRequest
+                .withVelocityX(0)
+                .withVelocityY(0)
+                .withRotationalRate(0)
+        );
     }
 
     @Override
     public boolean isFinished() {
+        Pose2d currentPose = poseSupplier.get();
 
-        // use this function if you override the command to finish it
-        // if (timer.hasElapsed(20)) {
-        // return true;
-        // }
-
-        //Pose2d botPose = drivetrain.getState().Pose;
-
-        //double distance = getMagnitude(botPose.getX() - finalPosition.getX(), botPose.getY() - finalPosition.getY());
-        double distance = 
-
-        double rotational_error = Math.abs(finalPosition.getRotation().minus(botPose.getRotation()).getDegrees());
-
-        //Logger.recordOutput("Movement Distance", distance);
-        //Logger.recordOutput("Turning Distance", rotational_error);
-
-        boolean isThere = distance < K_AUTO_TRANSLATION_TOLERANCE && rotational_error < K_AUTO_ROTATION_TOLERANCE;
+        double distance = Vector2D.getMagnitude(currentPose, targetPose);
+        double rotationError = Math.abs(targetPose.getRotation().minus(currentPose.getRotation()).getDegrees());
+        
+        boolean isThere = (distance < distanceTolerance) && (rotationError < rotationTolerance);
 
         if (isThere) {
-            System.out.printf("%s arrived at position (%.3fm, %.3fm, %.3f°) while being %.3fm and %.3f° off.\n", getName(), botPose.getX(),
-                    botPose.getY(), botPose.getRotation().getDegrees(), distance, rotational_error);
+            System.out.printf("[SwerveDriveToPoint] Arrived! Offsets: %.3fm, %.1f°\n", 
+                    distance, rotationError);
         }
 
         return isThere;
