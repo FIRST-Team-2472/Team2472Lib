@@ -10,6 +10,7 @@ import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import team2472lib.util.Vector2d;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -95,7 +96,7 @@ public class SwerveDriveToPointCommand extends Command {
         Pose2d currentPose = poseSupplier.get();
         startingRotation = currentPose.getRotation();
     
-        totalDistance = Vector2D.fromPose(currentPose, targetPose).getMagnitude();
+        totalDistance = Vector2d.fromPose(currentPose, targetPose).getMagnitude();
         
         timer.restart();
     }
@@ -104,8 +105,8 @@ public class SwerveDriveToPointCommand extends Command {
     public void execute() {
         Pose2d currentPose = poseSupplier.get();
 
-        double currentDistance = Vector2D.fromPose(currentPose, targetPose).getMagnitude();
-        Vector2D direction = Vector2D.fromPose(currentPose, targetPose).normalize();
+        double currentDistance = Vector2d.fromPose(currentPose, targetPose).getMagnitude();
+        Vector2d direction = Vector2d.fromPose(currentPose, targetPose).normalize();
 
         double progress = totalDistance > 0 ? 1.0 - (currentDistance / totalDistance) : 1.0;
         progress = Math.max(0.0, Math.min(1.0, progress)); // Clamp progress between 0 and 1
@@ -141,7 +142,7 @@ public class SwerveDriveToPointCommand extends Command {
     public boolean isFinished() {
         Pose2d currentPose = poseSupplier.get();
 
-        double distance = Vector2D.getMagnitude(currentPose, targetPose);
+        double distance = Vector2d.getMagnitude(currentPose, targetPose);
         double rotationError = Math.abs(targetPose.getRotation().minus(currentPose.getRotation()).getDegrees());
         
         boolean isThere = (distance < distanceTolerance) && (rotationError < rotationTolerance);

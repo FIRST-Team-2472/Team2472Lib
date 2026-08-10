@@ -1,4 +1,4 @@
-package team2472lib;
+package team2472lib.util;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;

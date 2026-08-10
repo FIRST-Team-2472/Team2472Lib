@@ -1,4 +1,4 @@
-package team2472lib;
+package team2472lib.util;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -8,102 +8,102 @@ import edu.wpi.first.math.geometry.Translation2d;
  * A mutable, chainable 2D vector class designed for fluid math operations.
  * Integrates directly with WPILib geometry types.
  */
-public class Vector2D {
+public class Vector2d {
     private double x;
     private double y;
 
     /** Creates a zeroed vector (0, 0). */
-    public Vector2D() {
+    public Vector2d() {
         this(0, 0);
     }
 
     /** Creates a vector with explicit X and Y components. */
-    public Vector2D(double x, double y) {
+    public Vector2d(double x, double y) {
         this.x = x;
         this.y = y;
     }
 
     /** Creates a vector from a WPILib Translation2d object. */
-    public Vector2D(Translation2d translation) {
+    public Vector2d(Translation2d translation) {
         this(translation.getX(), translation.getY());
     }
 
     /** Creates a vector from the positional translation of a WPILib Pose2d. */
-    public Vector2D(Pose2d pose) {
+    public Vector2d(Pose2d pose) {
         this(pose.getTranslation());
     }
 
-    public static Vector2D fromCoordinates(double x, double y) {
-        return new Vector2D(x, y);
+    public static Vector2d fromCoordinates(double x, double y) {
+        return new Vector2d(x, y);
     }
 
-    public static Vector2D fromTranslation(Translation2d translation) {
-        return new Vector2D(translation);
+    public static Vector2d fromTranslation(Translation2d translation) {
+        return new Vector2d(translation);
     }
 
-    public static Vector2D fromPose(Pose2d pose) {
-        return new Vector2D(pose);
+    public static Vector2d fromPose(Pose2d pose) {
+        return new Vector2d(pose);
     }
 
-    public static Vector2D fromPose(Pose2d start, Pose2d end) {
-        return new Vector2D(start.relativeTo(end));
+    public static Vector2d fromPose(Pose2d start, Pose2d end) {
+        return new Vector2d(end.getTranslation().minus(start.getTranslation()));
     }
 
     /** Static factory to build a vector using polar coordinates. */
-    public static Vector2D fromPolar(double magnitude, Rotation2d angle) {
-        return new Vector2D(magnitude * angle.getCos(), magnitude * angle.getSin());
+    public static Vector2d fromPolar(double magnitude, Rotation2d angle) {
+        return new Vector2d(magnitude * angle.getCos(), magnitude * angle.getSin());
     }
 
     // --- MUTATING CHAINABLE METHODS (Modifies this instance and returns it) ---
 
     /** Adds the components of another vector to this instance. */
-    public Vector2D add(Vector2D other) {
+    public Vector2d add(Vector2d other) {
         this.x += other.x;
         this.y += other.y;
         return this;
     }
 
     /** Adds a raw translation to this instance. */
-    public Vector2D add(Translation2d translation) {
+    public Vector2d add(Translation2d translation) {
         this.x += translation.getX();
         this.y += translation.getY();
         return this;
     }
 
-    public static Vector2D add(Translation2d a, Translation2d b) {
-        return new Vector2D(a.plus(b));
+    public static Vector2d add(Translation2d a, Translation2d b) {
+        return new Vector2d(a.plus(b));
     }
 
     /** Subtracts the components of another vector from this instance. */
-    public Vector2D subtract(Vector2D other) {
+    public Vector2d subtract(Vector2d other) {
         this.x -= other.x;
         this.y -= other.y;
         return this;
     }
 
-    public Vector2D subtract(Translation2d translation) {
+    public Vector2d subtract(Translation2d translation) {
         this.x -= translation.getX();
         this.y -= translation.getY();
         return this;
     }
 
-    public static Vector2D subtract(Translation2d a, Translation2d b) {
-        return new Vector2D(a.minus(b));
+    public static Vector2d subtract(Translation2d a, Translation2d b) {
+        return new Vector2d(a.minus(b));
     }
 
     /** Multiplies the vector components by a constant scalar value. */
-    public Vector2D scale(double scalar) {
+    public Vector2d scale(double scalar) {
         this.x *= scalar;
         this.y *= scalar;
         return this;
     }
 
-    public static Vector2D scale(Translation2d vector, double scalar) {
-        return new Vector2D(vector.times(scalar));
+    public static Vector2d scale(Translation2d vector, double scalar) {
+        return new Vector2d(vector.times(scalar));
     }
 
     /** Rotates the vector counter-clockwise by a given Rotation2d. */
-    public Vector2D rotateBy(Rotation2d angle) {
+    public Vector2d rotateBy(Rotation2d angle) {
         double cos = angle.getCos();
         double sin = angle.getSin();
         double newX = (this.x * cos) - (this.y * sin);
@@ -113,12 +113,12 @@ public class Vector2D {
         return this;
     }
 
-    public static Vector2D rotateBy(Translation2d vector, Rotation2d angle) {
-        return new Vector2D(vector.rotateBy(angle));
+    public static Vector2d rotateBy(Translation2d vector, Rotation2d angle) {
+        return new Vector2d(vector.rotateBy(angle));
     }
 
     /** Normalizes the vector (scales its magnitude to 1.0 while protecting its direction). */
-    public Vector2D normalize() {
+    public Vector2d normalize() {
         double mag = getMagnitude();
         if (mag != 0) {
             this.x /= mag;
@@ -127,12 +127,12 @@ public class Vector2D {
         return this;
     }
 
-    public static Vector2D normalize(Translation2d vector) {
+    public static Vector2d normalize(Translation2d vector) {
         double mag = vector.getNorm();
         if (mag == 0) {
-            return new Vector2D();
+            return new Vector2d();
         }
-        return new Vector2D(vector.getX() / mag, vector.getY() / mag);
+        return new Vector2d(vector.getX() / mag, vector.getY() / mag);
     }
 
     // --- TERMINAL / EVALUATING METHODS (Returns raw calculations or WPILib objects) ---
@@ -180,7 +180,7 @@ public class Vector2D {
     }
 
     /** Computes the dot product between this vector and another. */
-    public double dot(Vector2D other) {
+    public double dot(Vector2d other) {
         return (this.x * other.x) + (this.y * other.y);
     }
 
@@ -201,7 +201,7 @@ public class Vector2D {
     }
 
     /** Computes the 2D cross product magnitude (Z-axis sweep). */
-    public double cross(Vector2D other) {
+    public double cross(Vector2d other) {
         return (this.x * other.y) - (this.y * other.x);
     }
 
@@ -242,6 +242,6 @@ public class Vector2D {
 
     @Override
     public String toString() {
-        return String.format("Vector2D(X: %.3f, Y: %.3f, Mag: %.3f)", x, y, getMagnitude());
+        return String.format("Vector2d(X: %.3f, Y: %.3f, Mag: %.3f)", x, y, getMagnitude());
     }
 }

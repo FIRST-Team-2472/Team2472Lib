@@ -1,4 +1,4 @@
-package team2472lib;
+package team2472lib.util;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -63,7 +63,7 @@ public class MotorCreator {
     public SparkMax getSparkMax() {
         SparkMax motor = new SparkMax(ID, type);
         SparkMaxConfig config = new SparkMaxConfig();
-        config.inverted(inverted).smartCurrentLimit(statorLimit).secondaryCurrentLimit(supplyLimit)
+        config.inverted(inverted).smartCurrentLimit(supplyLimit).secondaryCurrentLimit(statorLimit)
             .idleMode(idleMode);
 
         motor.configure(config, SparkMax.ResetMode.kResetSafeParameters, SparkMax.PersistMode.kPersistParameters);
@@ -79,7 +79,7 @@ public class MotorCreator {
     public SparkMax getSparkMax(SparkMax.ResetMode resetMode, SparkMax.PersistMode persistMode) {
         SparkMax motor = new SparkMax(ID, type);
         SparkMaxConfig config = new SparkMaxConfig();
-        config.inverted(inverted).smartCurrentLimit(statorLimit).secondaryCurrentLimit(supplyLimit)
+        config.inverted(inverted).smartCurrentLimit(supplyLimit).secondaryCurrentLimit(statorLimit)
             .idleMode(idleMode);
 
         motor.configure(config, resetMode, persistMode);
@@ -90,7 +90,7 @@ public class MotorCreator {
      * Creates and configures a TalonFX Motor.
      * @return A fully configured TalonFX motor instance.
      */
-    public TalonFX geTalonFX() {
+    public TalonFX getTalonFX() {
         TalonFX motor = new TalonFX(ID);
 
         MotorOutputConfigs outputConfig = new MotorOutputConfigs();

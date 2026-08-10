@@ -4,29 +4,31 @@
 package team2472lib;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import team2472lib.util.AutoPose2d;
+import team2472lib.util.Vector2d;
 
 public class AutoAim {
     AutoPose2d target;
     double deltaHight;
 
-    public AutoAim() {}
+    public AutoAim() {
+        target = new AutoPose2d(0, 0);
+        deltaHight = 0;
+    }
 
     public AutoAim(AutoPose2d target, double deltaHight) {
         this.target = target;
         this.deltaHight = deltaHight;
     }
 
-    public double getTargetYaw(Pose2d currentPose, AutoPose2d target, double deltaHight) {
+    public Rotation2d getTargetYaw(Pose2d currentPose) {
+        return Vector2d.getAngle(currentPose, target.toPose2d());
+    }
+
+    public Rotation2d getTargetYaw(Pose2d currentPose, AutoPose2d target) {
         this.target = target;
-        this.deltaHight = deltaHight;
-        Pose2d translation = currentPose.relativeTo(target);
-        double angle = Math.atan2(translation.getY(), translation.getX());
-        return angle;
+        return getTargetYaw(currentPose);
     }
-
-    public double getTargetYaw(Pose2d currentPose) {
-        return getTargetYaw(currentPose, target, deltaHight);
-    }
-
 
 }

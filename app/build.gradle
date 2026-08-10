@@ -43,6 +43,8 @@ dependencies {
     // Provides the missing Jackson JSON dependencies 
     api 'com.fasterxml.jackson.core:jackson-annotations:2.15.2'
     api 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+    
+    api 'edu.wpi.first.wpinet:wpinet-java:2026.+'
 }
 
 java {
