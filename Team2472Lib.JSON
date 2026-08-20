@@ -1,0 +1,20 @@
+{
+  "fileName": "Team2472Lib.json",
+  "name": "Team2472Lib",
+  "version": "1.0.0",
+  "frcYear": "2026",
+  "uuid": "824e23de-f942-40ee-afc7-c0bd31ec5d15",
+  "mavenUrls": [
+    "https://maven.pkg.github.com/FIRST-Team-2472/Team2472Lib"
+  ],
+  "jsonUrl": "https://raw.githubusercontent.com/FIRST-Team-2472/Team2472Lib/Team2472Lib.json",
+  "javaDependencies": [
+    {
+      "groupId": "com.team2472.library",
+      "artifactId": "Team2472Lib",
+      "version": "1.0.0"
+    }
+  ],
+  "jniDependencies": [],
+  "cppDependencies": []
+}

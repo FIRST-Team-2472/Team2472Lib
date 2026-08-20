@@ -44,13 +44,8 @@ public class TeleOpDriveCommand extends Command {
 
     private double kp, ki, kd;
 
-
-    //private Rotation2d targetAngle = new Rotation2d();
-    //private AutoAim autoAim = new AutoAim();
-
     private final NetworkTableInstance inst = NetworkTableInstance.getDefault();
     public final NetworkTable driveStateTable = inst.getTable("DriveState");
-    //private final StructPublisher<Pose2d> predictedPose = driveStateTable.getStructTopic("Predicted Pose", Pose2d.struct).publish();
 
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
     .withDriveRequestType(SwerveModule.DriveRequestType.Velocity);
@@ -110,34 +105,6 @@ public class TeleOpDriveCommand extends Command {
         ySpeed *= maxSpeed * (slowMode.get() ? speedMult : 1.0);
         thetaSpeed *= maxRotation * (slowMode.get() ? rotationMult : 1.0);
 
-        // if driver tries to yaw, they disable auto-yaw until they stop intaking and
-        // start again
-        // TODO: Replace 0.1 with deadband constant
-        /* if (Math.abs(inputTheta.get()) > 0.1 && intakeActive.get()) {
-            intakeAutoYawOverrided = true;
-        } else if (!intakeActive.get()) {
-            intakeAutoYawOverrided = false;
-        } */
-
-        /* if ((Math.abs(inputTheta.get()) > 0.1 && aimActive.get()) || isKidMode) {
-            autoAimYawOverrided = true;
-        } else if (!aimActive.get()) {
-            autoAimYawOverrided = false;
-        } */
-
-        // if using intake and not using manual rotation control
-       /*  if (intakeActive.get() && !intakeAutoYawOverrided) {
-
-            thetaSpeed = getIntakeAutoYawSpeed(ySpeed, xSpeed);
-        } else if (aimActive.get() && !autoAimYawOverrided) {// may need to tweak how this yaw controller is used
-            // if auto aim and not using manual rotation control
-
-            thetaSpeed = getAutoAimYawSpeed();
-        } */
-
-        //predictedPose.set(new Pose2d(autoAim.getPredictedPosition(pose.get(), speeds.get()).getX(),
-                //autoAim.getPredictedPosition(pose.get(), speeds.get()).getY(), targetAngle));
-
         if (isKidMode) {
             xSpeed /= 10;
             ySpeed /= 10;
@@ -192,28 +159,4 @@ public class TeleOpDriveCommand extends Command {
         this.isKidMode = isKidMode;
         return this;
     }
-
-    /* private double getAutoAimYawSpeed() {
-        double thetaSpeed;
-        // targetAngle = new Rotation2d(autoAim.getTargetYaw(drivetrain.getState().Pose));
-        targetAngle = new Rotation2d(autoAim.getTargetYaw(pose.get()));
-        targetAngle = targetAngle.minus(Rotation2d.fromRadians(Math.PI));
-
-        Rotation2d angleError = pose.get().getRotation().minus(targetAngle);
-        thetaSpeed = yawController.calculate(0, angleError.getRadians());
-        return thetaSpeed;
-    }
-
-    private double getIntakeAutoYawSpeed(double ySpeed, double xSpeed) {
-        double thetaSpeed;
-        if (Math.abs(inputX.get()) > deadband || Math.abs(inputY.get()) > deadband) {
-            targetAngle = new Rotation2d(Math.atan2(ySpeed, xSpeed));
-        } else {
-            targetAngle = pose.get().getRotation();
-        }
-
-        Rotation2d angleError = pose.get().getRotation().minus(targetAngle);
-        thetaSpeed = yawController.calculate(0, angleError.getRadians());
-        return thetaSpeed;
-    } */
 }

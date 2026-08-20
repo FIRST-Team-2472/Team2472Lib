@@ -1,6 +1,10 @@
 plugins {
     id 'java-library'
+    id 'maven-publish'
 }
+
+group = 'com.team2472.library'
+version = '2026.1.0'
 
 repositories {
     // Look directly inside your computer's local offline WPILib installation folder
@@ -55,4 +59,30 @@ java {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+tasks.named('jar') {
+    archiveBaseName = 'Team2472Lib'
+    archiveVersion = '1.0.0'
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            
+            artifactId = 'Team2472Lib' // Name of your artifact
+        }
+    }
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            // Replace USERNAME and REPOSITORY with your GitHub user/org and repo name
+            url = uri("https://maven.pkg.github.com/FIRST-Team-2472/Team2472Lib")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
 }
