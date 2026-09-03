@@ -76,13 +76,8 @@ publishing {
     }
     repositories {
         maven {
-            name = "GitHubPackages"
-            // Replace USERNAME and REPOSITORY with your GitHub user/org and repo name
-            url = uri("https://maven.pkg.github.com/FIRST-Team-2472/Team2472Lib")
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
-            }
+            name = "LocalMaven"
+            url = layout.buildDirectory.dir("repo")
         }
     }
 }
